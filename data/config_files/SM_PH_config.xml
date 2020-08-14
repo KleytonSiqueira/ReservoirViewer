@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<sepiaRv xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <parameters>
+    <root>C:\Users\carlos.UNISIM\Desktop\v198\v198.output\SEPIARV_20191021T16.58.28Z</root>
+    <folder2d>Export2D_20191021T16.58.28Z</folder2d>
+    <folderDistanceMatrix>DiffMatrix_20191021T16.58.28Z</folderDistanceMatrix>
+    <chart type="SMALLMULTIPLES" layoutCurve="PEANOHILBERT" />
+    <clustering type="XMEANS">
+      <distanceMatrix>MODELS3D_PROP</distanceMatrix>
+      <min>2</min>
+      <max>25</max>
+      <iterations>1</iterations>
+    </clustering>
+  </parameters>
+  <input>
+    <properties>
+      <property name="EPERMJ_0.0_M" function="MINIMUM" file2d="EPERMJ_0.0_DEFAULT_MATRIX_K.csv" fileDistanceMatrix="EPERMJ_0.0_M.csv" />
+      <property name="EPERMK_0.0_M" function="MINIMUM" file2d="EPERMK_0.0_DEFAULT_MATRIX_K.csv" fileDistanceMatrix="EPERMK_0.0_M.csv" />
+      <property name="OPUA_516.0_M" function="MINIMUM" file2d="OPUA_516.0_DEFAULT_MATRIX_K.csv" fileDistanceMatrix="OPUA_516.0_M.csv" />
+    </properties>
+    <allModels>models.txt</allModels>
+    <highlightedModels>highlightedModels.txt</highlightedModels>
+    <nullBlocks>Export2D_20191021T16.58.28Z\POR_0.0_DEFAULT_MATRIX_K.csv</nullBlocks>
+  </input>
+  <output>
+    <png filename="RVCHARTS\[PROP]-[CHART]_[CURVE]_[FUNC]_[CLUSTERING].PNG" height="0" width="0" />
+    <progressFile>progress.txt</progressFile>
+    <logFile>log.txt</logFile>
+  </output>
+</sepiaRv>
