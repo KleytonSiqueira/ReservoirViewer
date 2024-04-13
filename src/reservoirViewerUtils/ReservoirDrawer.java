@@ -96,6 +96,7 @@ public class ReservoirDrawer {
         int maxI = res.getMaxI();
         int maxJ = res.getMaxJ();
         int maxK = res.getMaxK();
+        ColorScale rbScale = new ColorScale();
 
         List<Integer> representativeModels = getRepresentativeModelsList(configuracao);
 
@@ -199,7 +200,7 @@ public class ReservoirDrawer {
         if (clusteringData != null) {
             clusterLayerChildren = clusterLayer.getChildren();
         }
-        double valueForPainting;
+        // double valueForPainting;
         // Drawing inside a IJ cell
         double rectangleXSize = xSize * maxI + gapSize * 2;
         double rectangleYSize = ySize * maxJ + gapSize * 2;
@@ -266,9 +267,9 @@ public class ReservoirDrawer {
                             r.setStrokeType(StrokeType.INSIDE);
                             r.setStroke(Color.web("white", 0.0F));
                             if (value >= filterMinValue && value <= filterMaxValue) {
-                                valueForPainting = Math.max(Math.min(value, maxValue), minValue);
+                                // valueForPainting = Math.max(Math.min(value, maxValue), minValue);
                                 // Color palette: blue for minimum value, red for maximum value, hue-based linear palette
-                                r.setFill(Color.hsb(240 - 240 * (valueForPainting - minValue) / (maxValue - minValue), 1, 1.0F));
+                                r.setFill(rbScale.getColor(value));
                             } else {
                                 r.setFill(Color.GRAY);
                             }
@@ -292,7 +293,6 @@ public class ReservoirDrawer {
         group.setScaleY(scale);
         //group.setTranslateX(0);
         //group.setTranslateY(0);
-        JFXPanel jfxPanel = new JFXPanel();
         Text title = new Text("Reservoir Viewer");
         Pane top = new Pane(title);
         title.setFill(Color.web("white"));
@@ -308,6 +308,7 @@ public class ReservoirDrawer {
          scalePane.getChildren().add(scaleMainRect);
          double scaleColorBarWidth = 100;
          double scaleColorBarStartX = 0;
+         ColorScale subtitleColor = new ColorScale(50.0, -49.0);
 
          // - drawing the bar
          double scaleNumberOfSteps = 100;
@@ -318,18 +319,17 @@ public class ReservoirDrawer {
              Rectangle(scaleColorBarStartX, y-interval, scaleColorBarWidth, interval);
              scaleItemRect.setStrokeType(StrokeType.INSIDE);
              scaleItemRect.setStroke(Color.web("black", 0.1f));
-             scaleItemRect.setFill(Color.hsb(240 - 240 * (double)i /
-             (double)scaleNumberOfSteps, 1, 1));
+             scaleItemRect.setFill(subtitleColor.getColor(i - 49));
              scalePane.getChildren().add(scaleItemRect);
          }
 
          // - Defining exponent "exp" to use in scientific notation :  n.10^exp
-         int exp=0;
-         double mantissa=maxValue;
-         while (mantissa>=10) {
-             exp+=1;
-             mantissa = mantissa / 10d;
-         }
+         // int exp=0;
+         //double mantissa=maxValue;
+         //while (mantissa>=10) {
+         //    exp+=1;
+         //    mantissa = mantissa / 10d;
+         //}
 
          // - drawing ruler and numbers
          scaleNumberOfSteps = 4;
@@ -348,21 +348,7 @@ public class ReservoirDrawer {
              tBenchmark.setX(scaleColorBarStartX+scaleColorBarWidth+25);
              tBenchmark.setY(yStart-tBenchmark.getBoundsInParent().getHeight()*4+tBenchmark.getBaselineOffset()-(tBenchmark.getBoundsInParent().getHeight())/2);
              scalePane.getChildren().add(tBenchmark);
-         if (exp!=0) {  // draw a string "values X 10^exp" above the color bar
-             Text t = new Text("Values \u00d7 10^"+exp);
-             Font f = Font.font("Verdana", 30);
-             t.setFont(f);
-             t.setFill(Color.WHITE);
-             t.setFontSmoothingType(FontSmoothingType.LCD);
-             t.setStroke(Color.BLACK);
-             t.setStrokeLineCap(StrokeLineCap.ROUND);
-             t.setStrokeLineJoin(StrokeLineJoin.ROUND);
-             t.setStrokeType(StrokeType.OUTSIDE);
-             t.setStrokeWidth(gapSize);
-             t.setX(scaleColorBarStartX+scaleColorBarWidth+25);
-             t.setY(yStart-t.getBoundsInParent().getHeight()*2+t.getBaselineOffset()-(t.getBoundsInParent().getHeight())/2);
-             scalePane.getChildren().add(t);
-         }
+         
          for (int i=0; i<=scaleNumberOfSteps; i++) {
              double y = yEnd-interval2*i;
 
@@ -373,14 +359,13 @@ public class ReservoirDrawer {
              scalePane.getChildren().add(line);
 
 
-             double value = minValue + ((double)i /
-             (double)scaleNumberOfSteps) * (maxValue-minValue);
+             double value = -5.0 + ((double)i /
+             (double)scaleNumberOfSteps) * 10.0;
 //            System.out.println("original value="+value);
-             value = value / Math.pow(10,exp); // converting to a mantissa
              value = Math.rint(value*1000)/1000;
 //            System.out.println("rounded value="+value);
              String prefix="";
-             if (i == 0 && value > 0) {
+             if (i == 0) {
                  prefix = "\u2264 "; // less than or equal to
              } else if (i == scaleNumberOfSteps) {
                  prefix = "\u2265 "; // greater than or equal to
@@ -492,6 +477,7 @@ public class ReservoirDrawer {
         int maxI = res.getMaxI();
         int maxJ = res.getMaxJ();
         int maxK = res.getMaxK();
+        ColorScale rbScale = new ColorScale();
 
         List<Integer> representativeModels = getRepresentativeModelsList(configuracao);
 
@@ -565,7 +551,7 @@ public class ReservoirDrawer {
         reservoirMapLayer.getChildren().add(mainRect);
 
         ObservableList<Node> reservoirMapLayerChildren = reservoirMapLayer.getChildren();
-        double valueForPainting;
+        // double valueForPainting;
         for (int i = 1; i <= maxI; i++) {
             System.out.println("Row:" + i + "/" + maxI + "...");
             for (int j = 1; j <= maxJ; j++) {
@@ -594,9 +580,9 @@ public class ReservoirDrawer {
 
                                 r.setStrokeType(StrokeType.INSIDE);
                                 r.setStroke(Color.web("white", 0.1f));
-                                valueForPainting = Math.max(Math.min(value, maxValue), minValue);
+//                              // valueForPainting = Math.max(Math.min(value, maxValue), minValue);
                                 // Color palette: blue for minimum value, red for maximum value, hue-based linear palette
-                                r.setFill(Color.hsb(240 - 240 * (valueForPainting - minValue) / (maxValue - minValue), 1, 1));
+                                r.setFill(rbScale.getColor(value));
 
                                 r.setStrokeWidth(1f);
 
@@ -817,6 +803,7 @@ public class ReservoirDrawer {
          int maxI = res.getMaxI();
          int maxJ = res.getMaxJ();
          int maxK = res.getMaxK();
+         ColorScale rbScale = new ColorScale();
 
          ICurve curve = null;
 
@@ -912,7 +899,7 @@ public class ReservoirDrawer {
 
          ObservableList<Node> reservoirMapLayerChildren =
          reservoirMapLayer.getChildren();
-         double valueForPainting;
+         // double valueForPainting;
          for (int i = 1; i <= maxI; i++) {
              System.out.println("Row:" + i + "/" + maxI + "...");
              for (int j = 1; j <= maxJ; j++) {
@@ -938,9 +925,9 @@ public class ReservoirDrawer {
 
                                  r.setStrokeType(StrokeType.INSIDE);
                                  r.setStroke(Color.web("white", 0.1f));
-                                 valueForPainting = Math.max(Math.min(value, maxValue), minValue);
+                                 // valueForPainting = Math.max(Math.min(value, maxValue), minValue);
                                  // Color palette: blue for minimum value, red for maximum value, hue-based linear palette
-                                 r.setFill(Color.hsb(240 - 240 * (valueForPainting - minValue) / (maxValue - minValue), 1, 1));
+                                 r.setFill(rbScale.getColor(value));
 
                                  r.setStrokeWidth(1f);
                                 //reservoirMapLayer.getChildren().add(r);
@@ -1092,6 +1079,7 @@ public class ReservoirDrawer {
          scalePane.getChildren().add(scaleMainRect);
          double scaleColorBarWidth = 100;
          double scaleColorBarStartX = 0;
+         ColorScale subtitle = new ColorScale(50.0, -49.0);
 
          // - drawing the bar
          double scaleNumberOfSteps = 100;
@@ -1102,17 +1090,8 @@ public class ReservoirDrawer {
              Rectangle(scaleColorBarStartX, y-interval, scaleColorBarWidth, interval);
              scaleItemRect.setStrokeType(StrokeType.INSIDE);
              scaleItemRect.setStroke(Color.web("black", 0.1f));
-             scaleItemRect.setFill(Color.hsb(240 - 240 * (double)i /
-             (double)scaleNumberOfSteps, 1, 1));
+             scaleItemRect.setFill(subtitle.getColor(i - 49));
              scalePane.getChildren().add(scaleItemRect);
-         }
-
-         // - Defining exponent "exp" to use in scientific notation :  n.10^exp
-         int exp=0;
-         double mantissa=maxValue;
-         while (mantissa>=10) {
-             exp+=1;
-             mantissa = mantissa / 10d;
          }
 
          // - drawing ruler and numbers
@@ -1132,21 +1111,7 @@ public class ReservoirDrawer {
              tBenchmark.setX(scaleColorBarStartX+scaleColorBarWidth+25);
              tBenchmark.setY(yStart-tBenchmark.getBoundsInParent().getHeight()*4+tBenchmark.getBaselineOffset()-(tBenchmark.getBoundsInParent().getHeight())/2);
              scalePane.getChildren().add(tBenchmark);
-         if (exp!=0) {  // draw a string "values X 10^exp" above the color bar
-             Text t = new Text("Values \u00d7 10^"+exp);
-             Font f = Font.font("Verdana", 60);
-             t.setFont(f);
-             t.setFill(Color.WHITE);
-             t.setFontSmoothingType(FontSmoothingType.LCD);
-             t.setStroke(Color.BLACK);
-             t.setStrokeLineCap(StrokeLineCap.ROUND);
-             t.setStrokeLineJoin(StrokeLineJoin.ROUND);
-             t.setStrokeType(StrokeType.OUTSIDE);
-             t.setStrokeWidth(cellGapSize);
-             t.setX(scaleColorBarStartX+scaleColorBarWidth+25);
-             t.setY(yStart-t.getBoundsInParent().getHeight()*2+t.getBaselineOffset()-(t.getBoundsInParent().getHeight())/2);
-             scalePane.getChildren().add(t);
-         }
+         
          for (int i=0; i<=scaleNumberOfSteps; i++) {
              double y = yEnd-interval2*i;
 
@@ -1157,14 +1122,13 @@ public class ReservoirDrawer {
              scalePane.getChildren().add(line);
 
 
-             double value = minValue + ((double)i /
-             (double)scaleNumberOfSteps) * (maxValue-minValue);
+             double value = -5.0 + ((double)i /
+             (double)scaleNumberOfSteps) * 10.0;
 //            System.out.println("original value="+value);
-             value = value / Math.pow(10,exp); // converting to a mantissa
              value = Math.rint(value*1000)/1000;
 //            System.out.println("rounded value="+value);
              String prefix="";
-             if (i == 0 && value > 0) {
+             if (i == 0) {
                  prefix = "\u2264 "; // less than or equal to
              } else if (i == scaleNumberOfSteps) {
                  prefix = "\u2265 "; // greater than or equal to
@@ -1259,7 +1223,7 @@ public class ReservoirDrawer {
                                     + File.separator
                                     + configuracao.getNullBlocks(),
                                     meanType);
-            
+            /*
             //caso passe distance matrix:
             if (configuracao.getClusteringConfig().getDistanceMatrix().equals("MODELS3D_ALL_PROP") || configuracao.getClusteringConfig().getDistanceMatrix().equals("MODELS3D_PROP")) {
                 
@@ -1285,7 +1249,7 @@ public class ReservoirDrawer {
             
             //caso passe feature vector:
             if (configuracao.getClusteringConfig().getDistanceMatrix().equals("FEATVECTORS_PROP")) {
-                
+                */
                 //arquivo de progresso
                 FileWriter logFile = new FileWriter(configuracao.getRoot() + File.separator + configuracao.getProgressFile());
                 PrintWriter logFileWriter = new PrintWriter(logFile);
@@ -1299,8 +1263,8 @@ public class ReservoirDrawer {
                 //arquivo de progresso
                 logFileWriter.printf("50:ProgRVClstFin\n");
                 logFile.close();
+            /*
             }
-            
             switch (chartType.toLowerCase()) {
                 case "pixelization":
 //                    try {
@@ -1333,8 +1297,8 @@ public class ReservoirDrawer {
             }
             
             Runtime.getRuntime().gc();
-            }
-//        }
+            }*/
+        }
     }
     
     /**
