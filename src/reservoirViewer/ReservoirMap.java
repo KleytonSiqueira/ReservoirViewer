@@ -124,6 +124,11 @@ public class ReservoirMap {
         return map.getOrDefault(new IJKKey(property, i, j, getRealK(k)), 0d);
     }
 
+    public double getValueOrSmallerMin(String property, int i, int j, int k, double min) {
+        //return map.getOrDefault(new IJKKey(property, i, j, k), 0d);
+        return map.getOrDefault(new IJKKey(property, i, j, getRealK(k)), min - 1.0);
+    }
+
     public void setValue(String property, int i, int j, int k, double value) {
         map.put(new IJKKey(property, i, j, k), value);
     }
@@ -206,7 +211,7 @@ public class ReservoirMap {
         return min;
     }
 
-    public double getPercentile(String property, double percentile) {
+    public double[] getPercentile(String property, double percentile1, double percentile2) {
         List<Double> c = new ArrayList();//new ArrayList(this.map.values());
         for (Map.Entry entry : this.map.entrySet()) {
             IJKKey key = (IJKKey) entry.getKey();
@@ -219,7 +224,10 @@ public class ReservoirMap {
             }
         }
         Collections.sort(c); // Demora...
-        return c.get((int) (c.size() * percentile));
+        
+        int size = c.size();
+        
+        return new double[] { c.get((int) (size * percentile1)), c.get((int) (size * percentile2)), c.get(0) };
     }
 
     public Interval getInterval(String property, double pStart, double pEnd) {
@@ -256,7 +264,7 @@ public class ReservoirMap {
         }
     }
 
-    public List<Integer> getFeatureVector(int reservoirIndex, String property) {
+    public List<Integer> getFeatureVector(int reservoirIndex, String property, double[] thresholdLevel) {
 
         System.out.println("Generating feature vector from Reservoir " + reservoirIndex);
         int maxI = getMaxI();
@@ -276,12 +284,16 @@ public class ReservoirMap {
 //        List<Integer> jFeatureVectorLevel2 = new ArrayList<>(getMaxJ());
 //        List<Integer> jFeatureVectorLevel3 = new ArrayList<>(getMaxJ());
         
-        double thresholdLevel1to2 = this.getPercentile(property, 0.33);
-        double thresholdLevel2to3 = this.getPercentile(property, 0.67);
+        double thresholdLevel1to2 = thresholdLevel[0];
+        double thresholdLevel2to3 = thresholdLevel[1];
+        double min = thresholdLevel[2];
         
 //        double thresholdLevel1to2 = 10;
 //        double thresholdLevel2to3 = 100;
 
+/*
+
+Por default, os arrays já são preenchidos com 0;
         for (int i = 0; i < maxI; i++) {
             iFeatureVectorLevel1[i] = 0;
             iFeatureVectorLevel2[i] = 0;
@@ -297,12 +309,14 @@ public class ReservoirMap {
 //            jFeatureVectorLevel1.set(j-1,0);
 //            jFeatureVectorLevel2.set(j-1,0);
 //            jFeatureVectorLevel3.set(j-1,0);
-        }
+        }*/
 
         for (int i = 0; i < maxI; i++) {
             //System.out.println("   i=" + i);
             for (int j = 0; j < maxJ; j++) {
-                double value = this.getValue(property, i + 1, j + 1, reservoirIndex);
+                double value = this.getValueOrSmallerMin(property, i + 1, j + 1, reservoirIndex, min);
+                if (value < min) continue;
+                
                 if (value < thresholdLevel1to2) {
                     iFeatureVectorLevel1[i]++;
                     jFeatureVectorLevel1[j]++;
@@ -344,11 +358,13 @@ public class ReservoirMap {
     public ReorderableMatrix createFeatureVectorMatrix(String property) {
         System.out.println("Generating feature vector matrix...");
         ReorderableMatrix matrix = new ReorderableMatrix(getMaxK(), 3 * getMaxI() + 3 * getMaxJ());
+        
+        double[] thresholdLevel = this.getPercentile(property, 0.33, 0.67);
         // Each row represents a feature vector of a reservoir 
         for (int row = 0; row < matrix.getNumberOfRows(); row++) {
             int reservoirIndex = row + 1;
             System.out.println("Generating feature vector matrix row for Reservoir " + reservoirIndex);
-            List<Integer> featureVector = getFeatureVector(reservoirIndex, property);
+            List<Integer> featureVector = getFeatureVector(reservoirIndex, property, thresholdLevel);
             for (int column = 0; column < matrix.getNumberOfColumns(); column++) {
                 matrix.setValue(row, column, featureVector.get(column));
             }

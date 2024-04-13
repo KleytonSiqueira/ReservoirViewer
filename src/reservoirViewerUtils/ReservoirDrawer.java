@@ -1223,7 +1223,7 @@ public class ReservoirDrawer {
                                     + File.separator
                                     + configuracao.getNullBlocks(),
                                     meanType);
-            /*
+            
             //caso passe distance matrix:
             if (configuracao.getClusteringConfig().getDistanceMatrix().equals("MODELS3D_ALL_PROP") || configuracao.getClusteringConfig().getDistanceMatrix().equals("MODELS3D_PROP")) {
                 
@@ -1249,7 +1249,7 @@ public class ReservoirDrawer {
             
             //caso passe feature vector:
             if (configuracao.getClusteringConfig().getDistanceMatrix().equals("FEATVECTORS_PROP")) {
-                */
+            
                 //arquivo de progresso
                 FileWriter logFile = new FileWriter(configuracao.getRoot() + File.separator + configuracao.getProgressFile());
                 PrintWriter logFileWriter = new PrintWriter(logFile);
@@ -1263,7 +1263,6 @@ public class ReservoirDrawer {
                 //arquivo de progresso
                 logFileWriter.printf("50:ProgRVClstFin\n");
                 logFile.close();
-            /*
             }
             switch (chartType.toLowerCase()) {
                 case "pixelization":
@@ -1297,7 +1296,6 @@ public class ReservoirDrawer {
             }
             
             Runtime.getRuntime().gc();
-            }*/
         }
     }
     
