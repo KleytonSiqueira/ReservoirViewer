@@ -34,6 +34,16 @@ public class ReservoirMap {
     public static final int SUM = 12;
     public static final int STANDARD_DEVIATION = 13;
     public static final int MOD = 14;
+    
+    private double min = Double.POSITIVE_INFINITY;
+    private double max = Double.NEGATIVE_INFINITY;
+    
+    private int maxI = Integer.MAX_VALUE;
+    private int maxJ = Integer.MAX_VALUE;
+    private int maxK = Integer.MAX_VALUE;
+
+    
+    private List<Double> values;
 
     //private int number_of_k_values = 214; // TODO number_of_k_values should be calculated. 
     private Map<Integer, Integer> realKIndex = new HashMap<>(); // map from externalK to realK
@@ -151,20 +161,24 @@ public class ReservoirMap {
     }
 
     public int getMaxI() {
-        int maxI = 0;
-        for (IJKKey key : this.map.keySet()) {
-            if (key.i > maxI) {
-                maxI = key.i;
+        if (maxI == Integer.MAX_VALUE) {
+            maxI = 0;
+            for (IJKKey key : this.map.keySet()) {
+                if (key.i > maxI) {
+                    maxI = key.i;
+                }
             }
         }
         return maxI;
     }
 
     public int getMaxJ() {
-        int maxJ = 0;
-        for (IJKKey key : this.map.keySet()) {
-            if (key.j > maxJ) {
-                maxJ = key.j;
+        if (maxJ == Integer.MAX_VALUE) {
+            maxJ = 0;
+            for (IJKKey key : this.map.keySet()) {
+                if (key.j > maxJ) {
+                    maxJ = key.j;
+                }
             }
         }
         return maxJ;
@@ -176,58 +190,62 @@ public class ReservoirMap {
     reservatÃ³rio usando as tÃ©cnicas de visualizaÃ§Ã£o (ou seja, o K nÃ£o pode ser 
     simplesmente substituido    */
     public int getMaxK() {
-        int maxK = 0;
-        for (IJKKey key : this.map.keySet()) {
-            if (key.k > maxK) {
-                maxK = key.k;
+        if (maxK == Integer.MAX_VALUE) {
+            maxK = 0;
+            for (IJKKey key : this.map.keySet()) {
+                if (key.k > maxK) {
+                    maxK = key.k;
+                }
             }
         }
         return maxK;
     }
 
     public double getMaxValue(String property) {
-        double max = 0;
-        for (Map.Entry entry : this.map.entrySet()) {
-            IJKKey key = (IJKKey) entry.getKey();
-            double value = (double) entry.getValue();
-            if (key.property.equals(property) && value > max) {
-                max = value;
+        if (max == Double.NEGATIVE_INFINITY) {
+            for (Map.Entry entry : this.map.entrySet()) {
+                IJKKey key = (IJKKey) entry.getKey();
+                double value = (double) entry.getValue();
+                if (key.property.equals(property) && value > max) {
+                    max = value;
+                }
             }
         }
-        System.out.println("max(" + property + ")=" + max);
         return max;
     }
 
     public double getMinValue(String property) {
-        double min = Double.POSITIVE_INFINITY;
-        for (Map.Entry entry : this.map.entrySet()) {
-            IJKKey key = (IJKKey) entry.getKey();
-            double value = (double) entry.getValue();
-            if (key.property.equals(property) && value < min) {
-                min = value;
+        if (min == Double.POSITIVE_INFINITY) {
+            for (Map.Entry entry : this.map.entrySet()) {
+                IJKKey key = (IJKKey) entry.getKey();
+                double value = (double) entry.getValue();
+                if (key.property.equals(property) && value < min) {
+                    min = value;
+                }
             }
         }
-        System.out.println("min(" + property + ")=" + min);
         return min;
     }
 
     public double[] getPercentile(String property, double percentile1, double percentile2) {
-        List<Double> c = new ArrayList();//new ArrayList(this.map.values());
-        for (Map.Entry entry : this.map.entrySet()) {
-            IJKKey key = (IJKKey) entry.getKey();
-            if (key.property.equals(property)) {
-                double value = (double) entry.getValue();
-                if (!Double.isNaN(value)) {
-                    c.add(value);
-                }
+        if (this.values == null) {
+            values = new ArrayList();//new ArrayList(this.map.values());
+            for (Map.Entry entry : this.map.entrySet()) {
+                IJKKey key = (IJKKey) entry.getKey();
+                if (key.property.equals(property)) {
+                    double value = (double) entry.getValue();
+                    if (!Double.isNaN(value)) {
+                        values.add(value);
+                    }
 
+                }
             }
+            Collections.sort(values); // Demora...
         }
-        Collections.sort(c); // Demora...
         
-        int size = c.size();
+        int size = values.size();
         
-        return new double[] { c.get((int) (size * percentile1)), c.get((int) (size * percentile2)), c.get(0) };
+        return new double[] { values.get((int) (size * percentile1)), values.get((int) (size * percentile2)), values.get(0) };
     }
 
     public Interval getInterval(String property, double pStart, double pEnd) {
@@ -236,20 +254,24 @@ public class ReservoirMap {
         // 0<=pStart<=pEnd<=1
 
         // It will not work properly if the reservoir is entirely empty
-        List<Double> c = new ArrayList();//new ArrayList(this.map.values());
-        for (Map.Entry entry : this.map.entrySet()) {
-            IJKKey key = (IJKKey) entry.getKey();
-            if (key.property.equals(property)) {
-                double value = (double) entry.getValue();
-                if (!Double.isNaN(value)) {
-                    c.add(value);
-                }
+//        List<Double> c = new ArrayList();//new ArrayList(this.map.values());
+        if (this.values == null) {
+            values = new ArrayList();//new ArrayList(this.map.values());
+            for (Map.Entry entry : this.map.entrySet()) {
+                IJKKey key = (IJKKey) entry.getKey();
+                if (key.property.equals(property)) {
+                    double value = (double) entry.getValue();
+                    if (!Double.isNaN(value)) {
+                        values.add(value);
+                    }
 
+                }
             }
+            Collections.sort(values); // Demora...
         }
-        Collections.sort(c); // Demora...
-        double startValue = c.get((int) (c.size() * pStart));
-        double endValue = c.get((int) (c.size() * pEnd));
+        int size = values.size();
+        double startValue = values.get((int) (values.size() * pStart));
+        double endValue = values.get((int) (values.size() * pEnd));
         Interval result = new Interval(startValue, endValue);
         return result;
     }

@@ -195,7 +195,7 @@ public class ReservoirDrawer {
         mainRect.setStroke(Color.web("white", 0.1F));
         backgroundLayer.getChildren().add(mainRect);
         Pane clusterLayer = new Pane();
-        ObservableList<Node> reservoirMapLayerChildren = reservoirMapLayer.getChildren();
+//        ObservableList<Node> reservoirMapLayerChildren = reservoirMapLayer.getChildren();
         ObservableList<Node> clusterLayerChildren = null;
         if (clusteringData != null) {
             clusterLayerChildren = clusterLayer.getChildren();
@@ -1186,7 +1186,6 @@ public class ReservoirDrawer {
     public void DrawManyodels(Configuracao configuracao) throws IOException {
         
         Clustering clustering = new Clustering();
-        ReservoirMap res = new ReservoirMap();
         ClusteringData clusteringData = null;
         List<WellList> estrategias = new ArrayList<WellList>();
         
@@ -1202,6 +1201,7 @@ public class ReservoirDrawer {
         String chartType = configuracao.getChartType();
         
         for (Property property : configuracao.getProperties()) {
+            ReservoirMap res = new ReservoirMap();
             
 //            for (WellList wellList : estrategias) {
             
