@@ -13,6 +13,7 @@ import javafx.scene.paint.Color;
 public class ColorScale {
     private double max;
     private double min;
+    private double ceil = Double.NEGATIVE_INFINITY;
     
     public ColorScale(){
         this(5.0, -5.0);
@@ -41,6 +42,16 @@ public class ColorScale {
             this.color = col;
             this.b = bri;
         }
+    }
+    
+    private double getCeil() {
+        if (ceil == Double.NEGATIVE_INFINITY) {
+            double max = Math.abs(this.max);
+            double min = Math.abs(this.min);
+            ceil = Math.max(max, min);
+        }
+        
+        return ceil;
     }
     
     private ColorParameters getPallete(double value){

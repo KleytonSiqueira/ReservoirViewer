@@ -38,10 +38,9 @@ public class ReservoirMap {
     private double min = Double.POSITIVE_INFINITY;
     private double max = Double.NEGATIVE_INFINITY;
     
-    private int maxI = Integer.MAX_VALUE;
-    private int maxJ = Integer.MAX_VALUE;
-    private int maxK = Integer.MAX_VALUE;
-
+    private int maxI = Integer.MIN_VALUE;
+    private int maxJ = Integer.MIN_VALUE;
+    private int maxK = Integer.MIN_VALUE;
     
     private List<Double> values;
 
@@ -159,27 +158,34 @@ public class ReservoirMap {
 //        double value = map.getOrDefault(new IJKKey("null", i, j, getRealK(k)), 0d);
 //        return value > 0;
     }
+    
+    public void mapKeys() {
+        maxI = 0;
+        maxJ = 0;
+        maxK = 0;
+        for (IJKKey key : this.map.keySet()) {
+            if (key.i > maxI) {
+                maxI = key.i;
+            }
+            if (key.j > maxJ) {
+                maxJ = key.j;
+            }
+            if (key.k > maxK) {
+                maxK = key.k;
+            }
+        }
+    }
 
     public int getMaxI() {
-        if (maxI == Integer.MAX_VALUE) {
-            maxI = 0;
-            for (IJKKey key : this.map.keySet()) {
-                if (key.i > maxI) {
-                    maxI = key.i;
-                }
-            }
+        if (maxI == Integer.MIN_VALUE) {
+            this.mapKeys();
         }
         return maxI;
     }
 
     public int getMaxJ() {
-        if (maxJ == Integer.MAX_VALUE) {
-            maxJ = 0;
-            for (IJKKey key : this.map.keySet()) {
-                if (key.j > maxJ) {
-                    maxJ = key.j;
-                }
-            }
+        if (maxJ == Integer.MIN_VALUE) {
+            this.mapKeys();
         }
         return maxJ;
     }
@@ -190,62 +196,55 @@ public class ReservoirMap {
     reservatÃ³rio usando as tÃ©cnicas de visualizaÃ§Ã£o (ou seja, o K nÃ£o pode ser 
     simplesmente substituido    */
     public int getMaxK() {
-        if (maxK == Integer.MAX_VALUE) {
-            maxK = 0;
-            for (IJKKey key : this.map.keySet()) {
-                if (key.k > maxK) {
-                    maxK = key.k;
-                }
-            }
+        if (maxK == Integer.MIN_VALUE) {
+            this.mapKeys();
         }
         return maxK;
     }
 
     public double getMaxValue(String property) {
-        if (max == Double.NEGATIVE_INFINITY) {
-            for (Map.Entry entry : this.map.entrySet()) {
-                IJKKey key = (IJKKey) entry.getKey();
-                double value = (double) entry.getValue();
-                if (key.property.equals(property) && value > max) {
-                    max = value;
-                }
-            }
+        if (this.values == null) {
+            this.setValues(property);
         }
-        return max;
+        try {
+            return this.values.get(this.values.size() - 1);
+        } catch(Exception e) {
+            return Double.NaN;
+        }
     }
 
     public double getMinValue(String property) {
-        if (min == Double.POSITIVE_INFINITY) {
-            for (Map.Entry entry : this.map.entrySet()) {
-                IJKKey key = (IJKKey) entry.getKey();
+        if (this.values == null) {
+            this.setValues(property);
+        }
+        
+        try {
+            return this.values.get(0);
+        } catch(Exception e) {
+            return Double.NaN;
+        }
+    }
+    
+    private void setValues(String property) {
+        values = new ArrayList();//new ArrayList(this.map.values());
+        for (Map.Entry entry : this.map.entrySet()) {
+            IJKKey key = (IJKKey) entry.getKey();
+            if (key.property.equals(property)) {
                 double value = (double) entry.getValue();
-                if (key.property.equals(property) && value < min) {
-                    min = value;
+                if (!Double.isNaN(value)) {
+                    values.add(value);
                 }
+
             }
         }
-        return min;
+        Collections.sort(values); // Demora...
     }
 
-    public double[] getPercentile(String property, double percentile1, double percentile2) {
-        if (this.values == null) {
-            values = new ArrayList();//new ArrayList(this.map.values());
-            for (Map.Entry entry : this.map.entrySet()) {
-                IJKKey key = (IJKKey) entry.getKey();
-                if (key.property.equals(property)) {
-                    double value = (double) entry.getValue();
-                    if (!Double.isNaN(value)) {
-                        values.add(value);
-                    }
-
-                }
-            }
-            Collections.sort(values); // Demora...
-        }
+    public double getThresholdPercent(String property) {
+        double max = Math.abs(this.getMaxValue(property));
+        double min = Math.abs(this.getMinValue(property));
         
-        int size = values.size();
-        
-        return new double[] { values.get((int) (size * percentile1)), values.get((int) (size * percentile2)), values.get(0) };
+        return Math.max(max, min) * 0.1;
     }
 
     public Interval getInterval(String property, double pStart, double pEnd) {
@@ -256,22 +255,11 @@ public class ReservoirMap {
         // It will not work properly if the reservoir is entirely empty
 //        List<Double> c = new ArrayList();//new ArrayList(this.map.values());
         if (this.values == null) {
-            values = new ArrayList();//new ArrayList(this.map.values());
-            for (Map.Entry entry : this.map.entrySet()) {
-                IJKKey key = (IJKKey) entry.getKey();
-                if (key.property.equals(property)) {
-                    double value = (double) entry.getValue();
-                    if (!Double.isNaN(value)) {
-                        values.add(value);
-                    }
-
-                }
-            }
-            Collections.sort(values); // Demora...
+            this.setValues(property);
         }
         int size = values.size();
-        double startValue = values.get((int) (values.size() * pStart));
-        double endValue = values.get((int) (values.size() * pEnd));
+        double startValue = values.get((int) (size * pStart));
+        double endValue = values.get((int) (size * pEnd));
         Interval result = new Interval(startValue, endValue);
         return result;
     }
@@ -286,8 +274,7 @@ public class ReservoirMap {
         }
     }
 
-    public List<Integer> getFeatureVector(int reservoirIndex, String property, double[] thresholdLevel) {
-
+    public List<Integer> getFeatureVector(int reservoirIndex, String property, double thresholdLevel) {
         System.out.println("Generating feature vector from Reservoir " + reservoirIndex);
         int maxI = getMaxI();
         int maxJ = getMaxJ();
@@ -300,49 +287,15 @@ public class ReservoirMap {
         int[] jFeatureVectorLevel2 = new int[maxJ]; // median values
         int[] jFeatureVectorLevel3 = new int[maxJ]; // high values
 
-//        List<Integer> iFeatureVectorLevel2 = new ArrayList<>(getMaxI());
-//        List<Integer> iFeatureVectorLevel3 = new ArrayList<>(getMaxI());
-//        List<Integer> jFeatureVectorLevel1 = new ArrayList<>(getMaxJ());
-//        List<Integer> jFeatureVectorLevel2 = new ArrayList<>(getMaxJ());
-//        List<Integer> jFeatureVectorLevel3 = new ArrayList<>(getMaxJ());
-        
-        double thresholdLevel1to2 = thresholdLevel[0];
-        double thresholdLevel2to3 = thresholdLevel[1];
-        double min = thresholdLevel[2];
-        
-//        double thresholdLevel1to2 = 10;
-//        double thresholdLevel2to3 = 100;
-
-/*
-
-Por default, os arrays já são preenchidos com 0;
         for (int i = 0; i < maxI; i++) {
-            iFeatureVectorLevel1[i] = 0;
-            iFeatureVectorLevel2[i] = 0;
-            iFeatureVectorLevel3[i] = 0;
-//            iFeatureVectorLevel1.set(i-1,0);
-//            iFeatureVectorLevel2.set(i-1,0);
-//            iFeatureVectorLevel3.set(i-1,0);
-        }
-        for (int j = 0; j < maxJ; j++) {
-            jFeatureVectorLevel1[j] = 0;
-            jFeatureVectorLevel2[j] = 0;
-            jFeatureVectorLevel3[j] = 0;
-//            jFeatureVectorLevel1.set(j-1,0);
-//            jFeatureVectorLevel2.set(j-1,0);
-//            jFeatureVectorLevel3.set(j-1,0);
-        }*/
-
-        for (int i = 0; i < maxI; i++) {
-            //System.out.println("   i=" + i);
             for (int j = 0; j < maxJ; j++) {
                 double value = this.getValueOrSmallerMin(property, i + 1, j + 1, reservoirIndex, min);
                 if (value < min) continue;
                 
-                if (value < thresholdLevel1to2) {
+                if (value < -thresholdLevel) {
                     iFeatureVectorLevel1[i]++;
                     jFeatureVectorLevel1[j]++;
-                } else if (value < thresholdLevel2to3) {
+                } else if (value < thresholdLevel) {
                     iFeatureVectorLevel2[i]++;
                     jFeatureVectorLevel2[j]++;
                 } else {
@@ -381,12 +334,12 @@ Por default, os arrays já são preenchidos com 0;
         System.out.println("Generating feature vector matrix...");
         ReorderableMatrix matrix = new ReorderableMatrix(getMaxK(), 3 * getMaxI() + 3 * getMaxJ());
         
-        double[] thresholdLevel = this.getPercentile(property, 0.33, 0.67);
+        double thresholdValue = this.getThresholdPercent(property);
         // Each row represents a feature vector of a reservoir 
         for (int row = 0; row < matrix.getNumberOfRows(); row++) {
             int reservoirIndex = row + 1;
             System.out.println("Generating feature vector matrix row for Reservoir " + reservoirIndex);
-            List<Integer> featureVector = getFeatureVector(reservoirIndex, property, thresholdLevel);
+            List<Integer> featureVector = getFeatureVector(reservoirIndex, property, thresholdValue);
             for (int column = 0; column < matrix.getNumberOfColumns(); column++) {
                 matrix.setValue(row, column, featureVector.get(column));
             }

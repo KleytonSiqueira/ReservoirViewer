@@ -96,10 +96,9 @@ public class ReservoirDrawer {
         int maxI = res.getMaxI();
         int maxJ = res.getMaxJ();
         int maxK = res.getMaxK();
-        ColorScale rbScale = new ColorScale();
 
         List<Integer> representativeModels = getRepresentativeModelsList(configuracao);
-
+        
         Dimension dimension; 
         int kxSize = 0;
         int kySize = 0;
@@ -143,17 +142,13 @@ public class ReservoirDrawer {
         }
 
         String propertyName = property.getName();
+        double min = res.getMinValue(propertyName);
+        ColorScale rbScale = new ColorScale();
 
         double actualMaxValue = res.getMaxValue(propertyName);
         double actualMinValue = res.getMinValue(propertyName);
         double filterMaxValue = 1.0 * (actualMaxValue - actualMinValue) + actualMinValue;
         double filterMinValue = 0.0 * (actualMaxValue - actualMinValue) + actualMinValue;
-
-        // Intervalo para ajustar paleta de cores entre P5 e P95
-        ReservoirMap.Interval maxMinInterval = res.getInterval(propertyName, 0.05, 0.95);
-        double maxValue = maxMinInterval.end;
-        double minValue = maxMinInterval.start;
-        //        maxValue *=0.3; // ajuste para ver intervalo especifico.
 
         double maxkxkySize = Math.max(kxSize, kySize);
 //        double zoom = 0.8; // TODO should be automatically calculated based on the window height and width
@@ -162,7 +157,7 @@ public class ReservoirDrawer {
         double ySize = kxSize / maxkxkySize * zoom;
         //int mainCellSize = size * 10;
         double gapSize = 1;
-        final double deltaForClusterBorder = 1;
+        final double deltaForClusterBorder = 30;
         //float mainCellSizePlusGap = mainCellSize + gapSize;
         int bottom = (int) (ySize * kySize + gapSize) * maxJ;
         int right = (int) (xSize * kxSize + gapSize) * maxI;
@@ -177,18 +172,26 @@ public class ReservoirDrawer {
         if (clusteringData != null) {
             for (int ky = 1; ky <= kySize; ky++) {
                 for (int kx = 1; kx <= kxSize; kx++) {
-                    int k = curve.getD(kx - 1, ky - 1) + 1; // Peano-Hibert layout
-                    if (k <= maxK && k > 0) {
-                        int realK = res.getRealK(k);
-                        System.out.println("k=" + k + "\t realK=" + realK);
-                        clusterIdMatrix[kx - 1][ky - 1] = clusteringData.getClusterId(realK - 1);
-                    } else {
-                        System.err.println("Error - trying to get reservoir k=" + k + " when defining clusters (clusterIdMatrix)");
-                        clusterIdMatrix[kx - 1][ky - 1] = -1;
-                    }
+                    clusterIdMatrix[kx - 1][ky - 1] = -2;
                 }
             }
         }
+//        if (clusteringData != null) {
+//            for (int ky = 1; ky <= kySize; ky++) {
+//                for (int kx = 1; kx <= kxSize; kx++) {
+//                    int k = curve.getD(kx - 1, ky - 1) + 1; // Peano-Hibert layout
+//                    if (k <= maxK && k > 0) {
+//                        int realK = res.getRealK(k);
+//                        System.out.println("k=" + k + "\t realK=" + realK);
+//                        clusterIdMatrix[kx - 1][ky - 1] = clusteringData.getClusterId(realK - 1);
+//                    } else {
+//                        System.err.println("Error - trying to get reservoir k=" + k + " when defining clusters (clusterIdMatrix)");
+//                        clusterIdMatrix[kx - 1][ky - 1] = -1;
+//                    }
+//                }
+//            }
+//        }
+        
         Pane curveLayer = new Pane();
         Rectangle mainRect = new Rectangle(0, 0, right, bottom);
         mainRect.setStrokeType(StrokeType.INSIDE);
@@ -206,14 +209,19 @@ public class ReservoirDrawer {
         double rectangleYSize = ySize * maxJ + gapSize * 2;
         Blend blend = new Blend();
         blend.setOpacity(1.0);
+        
+        double resgs = gapSize * 30;
+        
         for (int ky = 1; ky <= kySize; ky++) {
             for (int kx = 1; kx <= kxSize; kx++) {
                 int k = 1 + curve.getD(kx - 1, ky - 1); // Peano-Hibert layout
                 int realK = res.getRealK(k);
+                double xIni_p = getXSmallMultiples(kx, xSize, maxI, gapSize);
+                double yIni_p = getYSmallMultiples(bottom, ky, ySize, maxJ, gapSize);
                 // Surround a representative model with a rectangle
                 if (representativeModels.contains(realK)) {
-                    double xIni = getXSmallMultiples(kx, xSize, maxI, gapSize) - gapSize;
-                    double yIni = getYSmallMultiples(bottom, ky, ySize, maxJ, gapSize) - gapSize;
+                    double xIni = getXSmallMultiples(kx, xSize, maxI, resgs) - resgs;
+                    double yIni = getYSmallMultiples(bottom, ky, ySize, maxJ, resgs) - resgs;
                     Rectangle r = new Rectangle(xIni, yIni, rectangleXSize, rectangleYSize);
                     r.setStrokeType(StrokeType.INSIDE);
                     r.setStroke(Color.web("white", 1.0F));
@@ -222,13 +230,25 @@ public class ReservoirDrawer {
                 }
                 if (clusteringData != null) {
                     Color c = Color.web("yellow", 1.0F);
+//                    int currentClusterId = clusterIdMatrix[kx - 1][ky - 1];
                     int currentClusterId = clusterIdMatrix[kx - 1][ky - 1];
+                    if (clusterIdMatrix[kx - 1][ky - 1] == -2) {
+                        currentClusterId = (k <= maxK && k > 0) ? clusteringData.getClusterId(realK - 1) : -1;
+                        clusterIdMatrix[kx - 1][ky - 1] = currentClusterId;
+                    }
                     System.out.println("Analyzing cluster " + currentClusterId);
                     if (kx < kxSize) {
+                        
                         int rightClusterId = clusterIdMatrix[kx][ky - 1];
+                        if (rightClusterId == -2) {
+                            int k_x = 1 + curve.getD(kx, ky - 1); // Peano-Hibert layout
+                            int realK_x = res.getRealK(k_x);
+                            rightClusterId =  (k_x <= maxK && k_x > 0) ? clusteringData.getClusterId(realK_x - 1) : -1;
+                            clusterIdMatrix[kx - 1][ky - 1] = rightClusterId;
+                        }
                         if (currentClusterId != rightClusterId) {
-                            double xIni = getXSmallMultiples(kx + 1, xSize, maxI, gapSize) - gapSize / 2;
-                            double yIni = getYSmallMultiples(bottom, ky, ySize, maxJ, gapSize) - gapSize / 2;
+                            double xIni = getXSmallMultiples(kx + 1, xSize, maxI, resgs) - resgs / 2;
+                            double yIni = getYSmallMultiples(bottom, ky, ySize, maxJ, resgs) - resgs / 2;
                             Rectangle r = new Rectangle(xIni - deltaForClusterBorder / 2, yIni - deltaForClusterBorder / 2, deltaForClusterBorder, rectangleYSize + deltaForClusterBorder - gapSize * 2);
                             r.setStrokeType(StrokeType.INSIDE);
                             r.setStroke(c);
@@ -239,9 +259,15 @@ public class ReservoirDrawer {
                     }
                     if (ky < kySize) {
                         int bottomClusterId = clusterIdMatrix[kx - 1][ky];
+                        if (bottomClusterId == -2) {
+                            int k_y = 1 + curve.getD(kx - 1, ky); // Peano-Hibert layout
+                            int realK_y = res.getRealK(k_y);
+                            bottomClusterId = (k_y <= maxK && k_y > 0) ? clusteringData.getClusterId(realK_y - 1) : -1;
+                            clusterIdMatrix[kx - 1][ky - 1] = bottomClusterId;
+                        }
                         if (currentClusterId != bottomClusterId) {
-                            double xIni = getXSmallMultiples(kx, xSize, maxI, gapSize) - gapSize / 2;
-                            double yIni = getYSmallMultiples(bottom, ky + 1, ySize, maxJ, gapSize) - gapSize / 2;
+                            double xIni = getXSmallMultiples(kx, xSize, maxI, resgs) - resgs / 2;
+                            double yIni = getYSmallMultiples(bottom, ky + 1, ySize, maxJ, resgs) - resgs / 2;
                             Rectangle r = new Rectangle(xIni - deltaForClusterBorder / 2, yIni - deltaForClusterBorder / 2, rectangleXSize + deltaForClusterBorder - gapSize * 2, deltaForClusterBorder);
                             r.setStrokeType(StrokeType.INSIDE);
                             r.setStroke(c);
@@ -255,14 +281,15 @@ public class ReservoirDrawer {
                 //int k = kIni - 1 + kx + (ky - 1) * kxSize; // left-to-right, top-down layout
                 for (int i = 1; i <= maxI; i++) {
                     for (int j = 1; j <= maxJ; j++) {
-                        double value = res.getValue(propertyName, i, j, k);
+                        double value = res.getValueOrSmallerMin(propertyName, i, j, k, min - 1);
+                        if (value < min) continue;
                         if (!res.isNull(i, j, k)) {
                             //                             if (value==maxValue) {
                             //                                System.out.println("max is at "+i+","+j+","+k);
                             //                            }
                             //Rectangle r = new Rectangle(i * mainCellSizePlusGap + ky * size, j * mainCellSizePlusGap + kx * size, size, size);
-                            double xIni = getXSmallMultiples(kx, xSize, maxI, gapSize) + (i - 1) * xSize;
-                            double yIni = getYSmallMultiples(bottom, ky, ySize, maxJ, gapSize) + (maxJ - j) * ySize;
+                            double xIni = getXSmallMultiples(kx, xSize, maxI, resgs) + (i - 1) * xSize;
+                            double yIni = getYSmallMultiples(bottom, ky, ySize, maxJ, resgs) + (maxJ - j) * ySize;
                             Rectangle r = new Rectangle(xIni, yIni, xSize, ySize);
                             r.setStrokeType(StrokeType.INSIDE);
                             r.setStroke(Color.web("white", 0.0F));
@@ -477,9 +504,6 @@ public class ReservoirDrawer {
         int maxI = res.getMaxI();
         int maxJ = res.getMaxJ();
         int maxK = res.getMaxK();
-        ColorScale rbScale = new ColorScale();
-
-        List<Integer> representativeModels = getRepresentativeModelsList(configuracao);
 
         Dimension dimension;
         int kxSize = 0;
@@ -515,6 +539,7 @@ public class ReservoirDrawer {
         }
 
         String propertyName = property.getName();
+        ColorScale rbScale = new ColorScale();
 
         double actualMaxValue = res.getMaxValue(propertyName);
         double actualMinValue = res.getMinValue(propertyName);
@@ -550,7 +575,6 @@ public class ReservoirDrawer {
         mainRect.setStroke(Color.web("black", 0.1f));
         reservoirMapLayer.getChildren().add(mainRect);
 
-        ObservableList<Node> reservoirMapLayerChildren = reservoirMapLayer.getChildren();
         // double valueForPainting;
         for (int i = 1; i <= maxI; i++) {
             System.out.println("Row:" + i + "/" + maxI + "...");
@@ -803,6 +827,7 @@ public class ReservoirDrawer {
          int maxI = res.getMaxI();
          int maxJ = res.getMaxJ();
          int maxK = res.getMaxK();
+         double min = res.getMinValue(property.getName());
          ColorScale rbScale = new ColorScale();
 
          ICurve curve = null;
@@ -910,7 +935,8 @@ public class ReservoirDrawer {
 
                          //int k = kIni - 1 + kx + (ky - 1) * kxSize; // left-to-right, bottom-up layout
                          int k = 1 + curve.getD(kx - 1, ky - 1); // Peano-Hibert layout
-                         double value = res.getValue(property.getName(), i, j, k);
+                         double value = res.getValueOrSmallerMin(property.getName(), i, j, k, min);
+                         if (value < min) continue;
 
                          if (!res.isNull(i, j, k)) {
                              if (value >= filterMinValue && value <= filterMaxValue) {

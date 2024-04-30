@@ -103,7 +103,6 @@ class App {
             throw new IllegalStateException("Caminho para o XML não especificado.");
         } else {
             configuracao = xmlParserRV.getXmlAsConfiguracao(configFilePath);
-            
             //arquivo de progresso
                 FileWriter logFile = new FileWriter(configuracao.getRoot() + File.separator + configuracao.getProgressFile());
                 PrintWriter logFileWriter = new PrintWriter(logFile);
